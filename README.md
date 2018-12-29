@@ -1,0 +1,2 @@
+# CreditManager
+Manage credit.
