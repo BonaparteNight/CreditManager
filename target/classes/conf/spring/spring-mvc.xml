@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop"  
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:dwr="http://www.directwebremoting.org/schema/spring-dwr" 
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:task="http://www.springframework.org/schema/task"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+				http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd         
+				http://www.springframework.org/schema/tx
+         		http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+         		http://www.directwebremoting.org/schema/spring-dwr  
+				http://www.directwebremoting.org/schema/spring-dwr-3.0.xsd 
+         		http://www.springframework.org/schema/mvc
+				http://www.springframework.org/schema/mvc/spring-mvc-3.0.xsd
+         		http://www.springframework.org/schema/aop 
+         		http://www.springframework.org/schema/aop/spring-aop-3.0.xsd
+         		http://www.springframework.org/schema/task   
+        		http://www.springframework.org/schema/task/spring-task-3.0.xsd
+         		">
+     
+     	        		
+   	<!-- 定时器 -->
+	<task:annotation-driven/>
+    <!-- 自动扫描dao和service包(自动注入) -->
+	<context:component-scan base-package="com" />
+	
+     <!-- DefaultHandlerAdapter   -->
+	<bean class="org.springframework.web.servlet.mvc.SimpleControllerHandlerAdapter" />
+     
+	<!-- 拦截器 -->  
+  	<bean class="org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor"/>  
+   
+    <!-- freemarker视图解析器 -->
+    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="prefix"><value>/WEB-INF/views/</value></property>
+		<property name="suffix"><value>.jsp</value></property>
+ 	</bean>
+     
+    <!-- sql防注入拦截器 -->
+	<bean id="sqlInterceptor" class="com.core.utils.SQLInterceptor"/>   
+	
+	<bean id="handlerMapping" class="org.springframework.web.servlet.mvc.annotation.DefaultAnnotationHandlerMapping">
+		<property name="interceptors"> 
+		<list>
+     		<ref bean="sqlInterceptor" /> 
+		</list>
+     	</property> 
+    </bean>
+	 
+	 <!-- 启动Spring MVC的注解功能，完成请求和注解POJO的映射 -->  
+	<bean id="handlerAdapter" class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter">
+	    <!-- 配置一个基于注解的定制的WebBindingInitializer，解决日期转换问题，方法级别的处理器映射 --> 
+	    <property name="cacheSeconds" value="0" />  
+        <!-- 配置一下对json数据的转换 --> 
+	    <property name="messageConverters">    
+		     <list> 
+		     	<bean class="org.springframework.http.converter.ByteArrayHttpMessageConverter"/>    
+				<ref bean="mappingJacksonHttpMessageConverter" />
+		     </list>    
+		</property> 
+	</bean>
+	 
+	 
+ 	<bean id="mappingJacksonHttpMessageConverter" class="org.springframework.http.converter.json.MappingJacksonHttpMessageConverter">  
+	    <!-- 处理返回的json数据的编码，默认是ISO-88859-1 -->
+	    <property name="supportedMediaTypes">  
+	        <list>  
+	            <value>text/html;charset=UTF-8</value>  
+	            <value>application/json;charset=UTF-8</value>
+	        </list>  
+	    </property>  
+	</bean> 
+	 
+	 <!-- 为SpringContextUtil类配置上下文 -->
+    <bean  name="springContext" class="com.core.utils.SpringContextHolder"></bean> 
+	 
+	 <!-- 全局的异常处理 -->
+ 	<bean id="exceptionResolver" class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">  
+	    <property name="defaultErrorView">  
+		 	<value>forward:/error.jsp</value>
+		</property>
+	    <property name="defaultStatusCode">    
+	        <value>500</value>  
+	    </property>     
+		<property name="warnLogCategory">    
+	        <value>org.springframework.web.servlet.handler.SimpleMappingExceptionResolver</value>  
+	    </property>     
+	</bean>  
+	 
+	 <!-- 上传拦截 -->  
+    <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver"></bean>   
+    
+    
+    <mvc:interceptors>
+		<mvc:interceptor>
+			<mvc:mapping path="/**" />
+			<bean class="com.core.utils.AuthInterceptor">
+				<property name="excludeUrls">
+					<list>
+						<value>/loginController/login.do</value>
+					</list>
+				</property>
+			</bean>
+		</mvc:interceptor>
+	</mvc:interceptors>
+    
+	 
+     <!-- 
+  	freemarker视图解析器
+	<bean id="freemarkerResolver"
+		class="org.springframework.web.servlet.view.freemarker.FreeMarkerViewResolver"
+		parent="viewResolver">
+		<property name="order" value="1" />
+		<property name="suffix" value=".jsp" />
+		<property name="requestContextAttribute" value="request" />
+		<property name="exposeSpringMacroHelpers" value="true" />
+		<property name="exposeRequestAttributes" value="true" />
+		<property name="exposeSessionAttributes" value="true" />
+		<property name="allowSessionOverride" value="true" />
+		<property name="contentType" value="text/html;charset=utf-8" />编码
+		<property name="viewClass"
+			value="org.springframework.web.servlet.view.freemarker.FreeMarkerView" />
+	</bean>
+  	 -->
+	<!-- 将list强制转换成json和xml -->
+	<!-- <bean
+		class="org.springframework.web.servlet.mvc.annotation.AnnotationMethodHandlerAdapter">
+		<property name="webBindingInitializer">
+			<bean class="" />
+		</property>
+		<property name="messageConverters">
+			<list>
+				<bean id="mappingJacksonHttpMessageConverter"
+					class="org.springframework.http.converter.json.MappingJacksonHttpMessageConverter">
+					<property name="objectMapper">
+						<bean id="customObjectMapper" class="" />
+					</property>
+					<property name="supportedMediaTypes">
+						<list>
+							<value>text/html;charset=UTF-8</value>
+						</list>
+					</property>
+				</bean>
+				<bean
+					class="org.springframework.http.converter.StringHttpMessageConverter">
+					<property name="supportedMediaTypes">
+						<list>
+							<value>text/html;charset=UTF-8</value>
+						</list>
+					</property>
+				</bean>
+				可以增加其他数据类型,请参考spring的API
+			</list>
+		</property>
+	</bean>
+  	 -->
+  
+  
+</beans>

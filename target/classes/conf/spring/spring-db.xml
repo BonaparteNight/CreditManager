@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>  
+ <beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop"  
+	xmlns:tx="http://www.springframework.org/schema/tx" 
+    xsi:schemaLocation="http://www.springframework.org/schema/beans 
+   				http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+				http://www.springframework.org/schema/context 
+				http://www.springframework.org/schema/context/spring-context-3.0.xsd         
+				http://www.springframework.org/schema/tx
+         		http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+         		http://www.springframework.org/schema/aop 
+         		http://www.springframework.org/schema/aop/spring-aop-3.0.xsd">
+    
+    
+    	 <!-- 引入配置文件 -->  
+   	 <bean id="propertyConfigurer"  class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">  
+        <property name="location" value="classpath:/conf/properties/jdbc.properties" />  
+   	 </bean>  
+    
+    
+    <bean id="DATA_DB" class="com.alibaba.druid.pool.DruidDataSource"    destroy-method="close">  
+        <property name="url" value="${url}" />
+        <property name="username" value="${username}" />  
+        <property name="password" value="${password}" />  
+        <!-- 初始化连接大小 -->  
+        <property name="initialSize" value="${initialSize}"></property>  
+        <!-- 连接池最大数量 -->  
+        <property name="maxActive" value="${maxActive}"></property>  
+        <!-- 连接池最大空闲 -->  
+        <property name="maxIdle" value="${maxIdle}"></property>  
+        <!-- 连接池最小空闲 -->  
+        <property name="minIdle" value="${minIdle}"></property>  
+        <!-- 获取连接最大等待时间 -->  
+        <property name="maxWait" value="${maxWait}"></property>
+        
+        <property name="timeBetweenEvictionRunsMillis" value="${timeBetweenEvictionRunsMillis}" />
+		<property name="minEvictableIdleTimeMillis" value="${minEvictableIdleTimeMillis}" />
+		<property name="validationQuery" value="${validationQuery}" />
+		<property name="testWhileIdle" value="${testWhileIdle}" />
+		<property name="testOnBorrow" value="${testOnBorrow}" />
+		<property name="testOnReturn" value="${testOnReturn}" />
+        <!-- 开启Druid的监控统计功能 -->
+		<property name="filters" value="${filters}" />  
+    </bean>  
+    
+    	<!-- 配置动态数据源 -->
+	<bean id="dataSource" class="com.core.utils.RoutingDataSource">
+		<property name="targetDataSources">
+			<map key-type="java.lang.String">
+				<entry key="DATA_DB" value-ref="DATA_DB"></entry>
+			</map>
+		</property>
+		<property name="defaultTargetDataSource" ref="DATA_DB"></property><!-- 设置默认数据源 -->
+	</bean>
+	
+	<!-- JDBC事务管理器 -->  
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+	
+    <!-- spring 内置转换器 -->
+    <bean id="nativeJdbcExtractor" class="org.springframework.jdbc.support.nativejdbc.CommonsDbcpNativeJdbcExtractor" lazy-init="true" />
+	
+	<bean id="lobHandler" class="org.springframework.jdbc.support.lob.DefaultLobHandler" lazy-init="false" />
+	
+	<bean id="jdbcTemplate"  class = "org.springframework.jdbc.core.JdbcTemplate">   
+		 <property name = "dataSource" ref="dataSource"/>   
+	</bean>
+    
+	<bean class="org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate"> 
+		<constructor-arg ref="dataSource" />
+	</bean>
+	
+	<!-- 文件上传 -->
+	<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver" >
+		<property name="maxUploadSize">
+			<value>104857600</value>
+		</property>
+		<property name="maxInMemorySize">
+			<value>4096</value>
+		</property>
+	</bean>
+	
+    
+    	 <!-- 定义事务传播属性 -->
+    <tx:advice id="busTxAdvice" transaction-manager="transactionManager">
+	   <tx:attributes>
+	     <tx:method name="doSaveAs*" propagation="REQUIRED" read-only="false"  rollback-for="java.lang.Exception" />
+	     <tx:method name="*" propagation="SUPPORTS"/>
+	   </tx:attributes>
+	</tx:advice>
+	 
+    <aop:config>
+	   <!--把事务控制在Service层-->   
+	   <aop:pointcut id="businessMethods" expression="execution(public * com.*.service..*.*(..))" /> 
+	   <aop:advisor pointcut-ref="businessMethods" advice-ref="busTxAdvice" />  
+    </aop:config>
+    
+ </beans>  

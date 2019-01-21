@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd" id="WebApp_ID" version="3.0">
+  <display-name>maven_project</display-name>
+  <welcome-file-list>
+     <welcome-file>login.jsp</welcome-file>
+  </welcome-file-list>
+  	
+  	
+  	<!-- 建立log4j的监听 -->
+  	<!--tomcat容器初始化 web。xml时 context-param会转化为键值对    创建<listener></listener>中的类实例,即创建监听.
+  			监听中会有contextInitialized(ServletContextEvent args)初始化方法,在这个方法中获得context-param的键 -->
+  	<context-param>
+   	 	<param-name>log4jConfigLocation</param-name>
+   	 	<param-value>classpath:conf/properties/log.properties</param-value><!-- log.properties jsemkt.log4j.xml-->
+  	</context-param>
+  	<listener>
+    	<listener-class>org.springframework.web.util.Log4jConfigListener</listener-class>
+  	</listener>
+  	
+  	
+  	
+  	<!-- 默认转码 转成utf-8 -->
+  	<filter>
+		<filter-name>encoding</filter-name>
+		<filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+		<init-param>
+			<param-name>encoding</param-name>
+			<param-value>UTF-8</param-value>
+		</init-param>
+		<init-param>
+			<param-name>forceEncoding</param-name>
+			<param-value>true</param-value>
+		</init-param>
+	</filter>
+	<filter-mapping>
+		<filter-name>encoding</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+  	
+	  <context-param>
+    	<param-name>contextConfigLocation</param-name>
+    	<param-value>classpath:conf/spring/spring-db.xml</param-value>
+  	  </context-param>
+	  <listener>
+	    <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+	  </listener>
+	  <listener>
+	    <listener-class>org.springframework.web.context.request.RequestContextListener</listener-class>
+	  </listener>
+	  <listener>
+	    <listener-class>org.springframework.web.util.IntrospectorCleanupListener</listener-class>
+	  </listener>
+  	
+	    <servlet>
+			<servlet-name>spring</servlet-name>
+			<servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+			<init-param>
+				<param-name>contextConfigLocation</param-name>
+				<param-value>classpath:conf/spring/spring-mvc.xml</param-value>
+			</init-param>
+			<load-on-startup>1</load-on-startup>
+		</servlet>
+		<servlet-mapping>
+			<servlet-name>spring</servlet-name>
+			<url-pattern>*.do</url-pattern>
+		</servlet-mapping>
+  
+  
+</web-app>
